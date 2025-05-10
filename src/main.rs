@@ -3,21 +3,24 @@
 
 use cortex_m_rt::entry;
 use embassy_stm32::gpio::{Input, Level, Output, Pull, Speed};
+use modules::sonde::RSM4X2;
 use {defmt_rtt as _, panic_probe as _}; // global logger
 
-pub mod modules;
+pub mod sonde;
+#[cfg(feature = "stm32f1xx")]
+use sonde::RSM4X2;
+#[cfg(feature = "stm32l4xx")]
+use sonde::RSM4X4;
 
 #[entry]
 fn main() -> ! {
-    let p = embassy_stm32::init(Default::default());
-    let mut led = Output::new(p.PB14, Level::High, Speed::VeryHigh);
-    let button = Input::new(p.PC13, Pull::Up);
+    #[cfg(feature = "stm32f1xx")]
+    let sonde = RSM4X2 {
+        Sonde: Sonde::self_init()
+    };
+    #[cfg(feature = "stm32l4xx")]
+    let sonde = RSM4X4 {
+        Sonde: Sonde::self_init()
+    };
 
-    loop {
-        if button.is_low() {
-            led.set_high();
-        } else {
-            led.set_low();
-        }
-    }
-}
+} 
